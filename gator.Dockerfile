@@ -1,10 +1,4 @@
-ARG BUILDPLATFORM="linux/amd64"
-ARG BUILDERIMAGE="golang:1.22-bookworm"
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-ARG BASEIMAGE="gcr.io/distroless/static-debian12:nonroot"
-
-FROM --platform=$BUILDPLATFORM $BUILDERIMAGE AS builder
+FROM --platform=$BUILDPLATFORM golang:1.23-bookworm@sha256:3f3b9daa3de608f3e869cd2ff8baf21555cf0fca9fd34251b8f340f9b7c30ec5 AS builder
 
 ARG TARGETPLATFORM
 ARG TARGETOS
@@ -23,7 +17,7 @@ WORKDIR /go/src/github.com/open-policy-agent/gatekeeper/cmd/gator
 
 RUN go build -mod vendor -a -ldflags "${LDFLAGS}" -o /gator
 
-FROM --platform=$BUILDPLATFORM $BASEIMAGE AS build
+FROM --platform=$BUILDPLATFORM gcr.io/distroless/static-debian12@sha256:f4a57e8ffd7ba407bdd0eb315bb54ef1f21a2100a7f032e9102e4da34fe7c196 AS build
 USER 65532:65532
 COPY --from=builder --chown=65532:65532 /gator /gator
 ENTRYPOINT ["/gator"]

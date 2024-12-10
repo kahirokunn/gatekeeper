@@ -1,4 +1,4 @@
-FROM golang:1.23-bullseye@sha256:ecef8303ced05b7cd1addf3c8ea98974f9231d4c5a0c230d23b37bb623714a23 as builder
+FROM golang:1.23-bookworm@sha256:3f3b9daa3de608f3e869cd2ff8baf21555cf0fca9fd34251b8f340f9b7c30ec5 as builder
 
 ARG BATS_VERSION
 ARG ORAS_VERSION

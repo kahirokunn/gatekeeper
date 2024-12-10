@@ -32,15 +32,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
         with:
           egress-policy: audit
 
-      - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+      - uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
         with:
-          go-version: "1.22"
+          go-version: "1.23"
           check-latest: true
-      - uses: golang/govulncheck-action@dd0578b371c987f96d1185abb54344b44352bd58 # v1.0.3
+      - uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
 
   scan_vulnerabilities:
     name: "[Trivy] Scan for vulnerabilities"
@@ -48,12 +48,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
         with:
           egress-policy: audit
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Download trivy
         run: |
@@ -62,7 +62,13 @@ jobs:
           tar zxvf trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
           echo "$(pwd)" >> $GITHUB_PATH
         env:
-          TRIVY_VERSION: "0.46.0"
+          TRIVY_VERSION: "0.57.0"
+
+      - name: Download trivy db
+        run: |
+          trivy image \
+            --download-db-only \
+            --db-repository=ghcr.io/aquasecurity/trivy-db,public.ecr.aws/aquasecurity/trivy-db,docker.io/aquasec/trivy-db
 
       - name: Run trivy on git repository
         run: |

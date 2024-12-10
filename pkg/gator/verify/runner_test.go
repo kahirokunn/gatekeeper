@@ -10,8 +10,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	constraintclient "github.com/open-policy-agent/frameworks/constraint/pkg/client"
+	clienterrors "github.com/open-policy-agent/frameworks/constraint/pkg/client/errors"
 	"github.com/open-policy-agent/gatekeeper/v3/pkg/gator"
 	"github.com/open-policy-agent/gatekeeper/v3/pkg/gator/fixtures"
+	"github.com/open-policy-agent/gatekeeper/v3/pkg/target"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
@@ -1155,7 +1157,7 @@ func TestRunner_Run(t *testing.T) {
 							{Name: "invalid admission review object", Error: gator.ErrInvalidK8sAdmissionReview},
 							{Name: "missing admission request object", Error: gator.ErrMissingK8sAdmissionRequest},
 							{Name: "no objects to review", Error: gator.ErrNoObjectForReview},
-							{Name: "no oldObject on delete", Error: gator.ErrInvalidK8sAdmissionReview},
+							{Name: "no oldObject on delete", Error: &clienterrors.ErrorMap{target.Name: constraintclient.ErrReview}},
 						},
 					},
 					{
@@ -1163,6 +1165,68 @@ func TestRunner_Run(t *testing.T) {
 						CaseResults: []CaseResult{
 							{Name: "no kind on object", Error: gator.ErrUnmarshallObject},
 							{Name: "no kind on old object", Error: gator.ErrUnmarshallObject},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "expansion system",
+			suite: Suite{
+				Tests: []Test{
+					{
+						Name:       "check custom field with expansion system",
+						Template:   "template.yaml",
+						Constraint: "constraint.yaml",
+						Expansion:  "expansion.yaml",
+						Cases: []*Case{
+							{
+								Name:       "Foo Template object",
+								Object:     "foo-template.yaml",
+								Assertions: []Assertion{{Message: ptr.To[string]("foo object has restricted custom field")}},
+							},
+						},
+					},
+					{
+						Name:       "check custom field without expansion system",
+						Template:   "template.yaml",
+						Constraint: "constraint.yaml",
+						Cases: []*Case{
+							{
+								Name:       "Foo Template object",
+								Object:     "foo-template.yaml",
+								Assertions: []Assertion{{Violations: gator.IntStrFromStr("no")}},
+							},
+						},
+					},
+				},
+			},
+			f: fstest.MapFS{
+				"template.yaml": &fstest.MapFile{
+					Data: []byte(fixtures.TemplateRestrictCustomField),
+				},
+				"constraint.yaml": &fstest.MapFile{
+					Data: []byte(fixtures.ConstraintRestrictCustomField),
+				},
+				"foo-template.yaml": &fstest.MapFile{
+					Data: []byte(fixtures.ObjectFooTemplate),
+				},
+				"expansion.yaml": &fstest.MapFile{
+					Data: []byte(fixtures.ExpansionRestrictCustomField),
+				},
+			},
+			want: SuiteResult{
+				TestResults: []TestResult{
+					{
+						Name: "check custom field with expansion system",
+						CaseResults: []CaseResult{
+							{Name: "Foo Template object"},
+						},
+					},
+					{
+						Name: "check custom field without expansion system",
+						CaseResults: []CaseResult{
+							{Name: "Foo Template object"},
 						},
 					},
 				},
